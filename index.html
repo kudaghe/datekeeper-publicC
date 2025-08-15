@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DateKeeper - Never Miss Important Dates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .calendar-day.has-event {
+            background-color: #ddd6fe;
+            color: #7c3aed;
+            font-weight: 600;
+        }
+        
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .plan-card {
+            transition: all 0.3s ease;
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .popular-plan {
+            transform: scale(1.05);
+            border: 2px solid #667eea;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-purple-600">📅 DateKeeper</h1>
+                    </div>
+                </div>
+                
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" onclick="showPage('home')" class="nav-link text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="#" onclick="showPage('pricing')" class="nav-link text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Pricing</a>
+                        <a href="#" onclick="showPage('about')" class="nav-link text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">About</a>
+                        <a href="#" onclick="showPage('contact')" class="nav-link text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Contact</a>
+                        <a href="#" onclick="showPage('login')" class="nav-link text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="#" onclick="showPage('signup')" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">Sign Up</a>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="language-selector">
+                        <select onchange="changeLanguage(this.value)" class="bg-gray-100 border-0 rounded-md px-3 py-1 text-sm">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="ar">🇸🇦 العربية</option>
+                        </select>
+                    </div>
+                    
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <i class="fas fa-bars text-gray-700"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+                <a href="#" onclick="showPage('home')" class="nav-link block px-3 py-2 text-gray-700">Home</a>
+                <a href="#" onclick="showPage('pricing')" class="nav-link block px-3 py-2 text-gray-700">Pricing</a>
+                <a href="#" onclick="showPage('about')" class="nav-link block px-3 py-2 text-gray-700">About</a>
+                <a href="#" onclick="showPage('contact')" class="nav-link block px-3 py-2 text-gray-700">Contact</a>
+                <a href="#" onclick="showPage('login')" class="nav-link block px-3 py-2 text-gray-700">Login</a>
+                <a href="#" onclick="showPage('signup')" class="nav-link block px-3 py-2 text-purple-600">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Homepage -->
+    <div id="home-page" class="page">
+        <!-- Hero Section -->
+        <section class="gradient-bg text-white py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="hero-title text-4xl md:text-6xl font-bold mb-6">Never Miss Important Dates Again</h1>
+                <p class="hero-subtitle text-xl md:text-2xl mb-8 opacity-90">Smart reminders for birthdays, anniversaries, appointments, and all your special moments</p>
+                <button onclick="showPage('signup')" class="cta-button bg-white text-purple-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+                    Get Started Free
+                </button>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="how-it-works-title text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+                    <p class="how-it-works-subtitle text-xl text-gray-600">Three simple steps to never forget again</p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-calendar-plus text-2xl text-purple-600"></i>
+                        </div>
+                        <h3 class="step-title text-xl font-semibold mb-4">1. Add Your Dates</h3>
+                        <p class="step-description text-gray-600">Simply add birthdays, anniversaries, appointments, and any important dates to your personal calendar.</p>
+                    </div>
+                    
+                    <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-bell text-2xl text-purple-600"></i>
+                        </div>
+                        <h3 class="step-title text-xl font-semibold mb-4">2. Set Reminders</h3>
+                        <p class="step-description text-gray-600">Choose when and how you want to be reminded - days, weeks, or months in advance.</p>
+                    </div>
+                    
+                    <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-envelope text-2xl text-purple-600"></i>
+                        </div>
+                        <h3 class="step-title text-xl font-semibold mb-4">3. Get Notified</h3>
+                        <p class="step-description text-gray-600">Receive timely email reminders so you can prepare and never miss another important moment.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing-section" class="py-20 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+                    <p class="text-xl text-gray-600">Choose the perfect plan for your needs</p>
+                </div>
+                
+                <div class="grid md:grid-cols-4 gap-6">
+                    <!-- Free Plan -->
+                    <div class="plan-card bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Free</h3>
+                            <p class="text-3xl font-bold mb-2">$0<span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-gray-600">Great for trying out</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>3 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Email reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Basic support</span>
+                            </li>
+                            <li class="flex items-center text-gray-400">
+                                <i class="fas fa-times text-red-400 mr-2"></i>
+                                <span>Advanced analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Free')" class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md font-medium hover:bg-gray-300">
+                            Get Started
+                        </button>
+                    </div>
+                    
+                    <!-- Basic Plan -->
+                    <div class="plan-card popular-plan bg-white p-6 rounded-xl border-2 border-purple-500 relative">
+                        <div class="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">POPULAR</div>
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Basic</h3>
+                            <p class="text-3xl font-bold mb-2">$10<span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-purple-600 font-medium">$100 billed annually</p>
+                            <p class="text-gray-600">Great for personal use</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>10 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Advanced reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Email & chat support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Basic analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Basic')" class="w-full btn-primary text-white py-2 px-4 rounded-md font-medium">
+                            Choose Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Pro Plan -->
+                    <div class="plan-card bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Pro</h3>
+                            <p class="text-3xl font-bold mb-2">$20<span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-purple-600 font-medium">$200 billed annually</p>
+                            <p class="text-gray-600">For power users</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>30 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Custom reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Priority support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Advanced analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Pro')" class="w-full btn-primary text-white py-2 px-4 rounded-md font-medium">
+                            Choose Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Enterprise Plan -->
+                    <div class="plan-card bg-gray-800 text-white p-6 rounded-xl border border-gray-700">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Enterprise</h3>
+                            <p class="text-3xl font-bold mb-2">$50<span class="text-base text-gray-300">/month</span></p>
+                            <p class="text-purple-400 font-medium">$500 billed annually</p>
+                            <p class="text-gray-300">For businesses</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>Unlimited dates</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>Custom workflows</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>24/7 support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>API access</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Enterprise')" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md font-medium hover:bg-purple-700">
+                            Choose Plan
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-12 text-center text-gray-500">
+                    <p>All plans come with a 30-day money-back guarantee. No credit card required for free plan.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials -->
+        <section class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="testimonials-title text-3xl md:text-4xl font-bold text-gray-900">What Our Users Say</h2>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-xl">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-purple-600 font-semibold">SM</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Sarah Miller</h4>
+                                <p class="text-gray-600 text-sm">Marketing Manager</p>
+                            </div>
+                        </div>
+                        <p class="testimonial-text text-gray-700">"DateKeeper saved my relationships! I never forget birthdays or anniversaries anymore. The reminders are perfectly timed."</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-purple-600 font-semibold">JD</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">John Davis</h4>
+                                <p class="text-gray-600 text-sm">Small Business Owner</p>
+                            </div>
+                        </div>
+                        <p class="testimonial-text text-gray-700">"As a busy entrepreneur, this app is a lifesaver. I can focus on work knowing I'll never miss important personal dates."</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-purple-600 font-semibold">LW</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Lisa Wang</h4>
+                                <p class="text-gray-600 text-sm">Teacher</p>
+                            </div>
+                        </div>
+                        <p class="testimonial-text text-gray-700">"Simple, clean, and effective. The interface is so intuitive that I set up all my family dates in minutes."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white py-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid md:grid-cols-4 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">📅 DateKeeper</h3>
+                        <p class="text-gray-400">Never miss important dates again with smart email reminders.</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-4">Product</h4>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#" onclick="showPage('pricing')" class="hover:text-white">Pricing</a></li>
+                            <li><a href="#" class="hover:text-white">Features</a></li>
+                            <li><a href="#" class="hover:text-white">Security</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-4">Company</h4>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#" onclick="showPage('about')" class="hover:text-white">About</a></li>
+                            <li><a href="#" onclick="showPage('contact')" class="hover:text-white">Contact</a></li>
+                            <li><a href="#" class="hover:text-white">Careers</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-4">Legal</h4>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+                            <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                            <li><a href="#" class="hover:text-white">Cookie Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400">© 2024 DateKeeper. All rights reserved.</p>
+                    <div class="flex space-x-4 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Pricing Page -->
+    <div id="pricing-page" class="page hidden">
+        <div class="min-h-screen bg-gray-50 py-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Pricing Plans</h1>
+                    <p class="text-xl text-gray-600">Choose the perfect plan for your needs</p>
+                </div>
+                
+                <!-- Pricing Toggle -->
+                <div class="flex justify-center mb-8">
+                    <div class="inline-flex bg-gray-200 rounded-lg p-1">
+                        <button id="monthly-toggle" class="px-4 py-2 rounded-md font-medium bg-white text-purple-600 shadow-sm">
+                            Monthly
+                        </button>
+                        <button id="yearly-toggle" class="px-4 py-2 rounded-md font-medium text-gray-600 hover:text-gray-900">
+                            Yearly (Save 20%)
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pricing Cards -->
+                <div class="grid md:grid-cols-4 gap-6">
+                    <!-- Free Plan -->
+                    <div class="plan-card bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Free</h3>
+                            <p class="text-3xl font-bold mb-2"><span id="free-price">$0</span><span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-gray-600">Great for trying out</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>3 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Email reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Basic support</span>
+                            </li>
+                            <li class="flex items-center text-gray-400">
+                                <i class="fas fa-times text-red-400 mr-2"></i>
+                                <span>Advanced analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Free')" class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md font-medium hover:bg-gray-300">
+                            Get Started
+                        </button>
+                    </div>
+                    
+                    <!-- Basic Plan -->
+                    <div class="plan-card popular-plan bg-white p-6 rounded-xl border-2 border-purple-500 relative">
+                        <div class="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">POPULAR</div>
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Basic</h3>
+                            <p class="text-3xl font-bold mb-2"><span id="basic-price">$10</span><span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-purple-600 font-medium"><span id="basic-yearly">$100 billed annually</span></p>
+                            <p class="text-gray-600">Great for personal use</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>10 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Advanced reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Email & chat support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Basic analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Basic')" class="w-full btn-primary text-white py-2 px-4 rounded-md font-medium">
+                            Choose Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Pro Plan -->
+                    <div class="plan-card bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Pro</h3>
+                            <p class="text-3xl font-bold mb-2"><span id="pro-price">$20</span><span class="text-base text-gray-500">/month</span></p>
+                            <p class="text-purple-600 font-medium"><span id="pro-yearly">$200 billed annually</span></p>
+                            <p class="text-gray-600">For power users</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>30 dates per category</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Custom reminders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Priority support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>Advanced analytics</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Pro')" class="w-full btn-primary text-white py-2 px-4 rounded-md font-medium">
+                            Choose Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Enterprise Plan -->
+                    <div class="plan-card bg-gray-800 text-white p-6 rounded-xl border border-gray-700">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold mb-2">Enterprise</h3>
+                            <p class="text-3xl font-bold mb-2"><span id="enterprise-price">$50</span><span class="text-base text-gray-300">/month</span></p>
+                            <p class="text-purple-400 font-medium"><span id="enterprise-yearly">$500 billed annually</span></p>
+                            <p class="text-gray-300">For businesses</p>
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>Unlimited dates</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>Custom workflows</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>24/7 support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>
+                                <span>API access</span>
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('Enterprise')" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md font-medium hover:bg-purple-700">
+                            Choose Plan
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-12 bg-white p-6 rounded-xl border border-gray-200">
+                    <h3 class="text-xl font-bold mb-4 text-center">Frequently Asked Questions</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium mb-2">Can I switch plans later?</h4>
+                            <p class="text-gray-600">Yes, you can upgrade or downgrade your plan at any time from your account settings.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium mb-2">Is there a contract?</h4>
+                            <p class="text-gray-600">No, all plans are month-to-month or yearly with no long-term contract.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium mb-2">What payment methods do you accept?</h4>
+                            <p class="text-gray-600">We accept all major credit cards and PayPal.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium mb-2">Can I cancel anytime?</h4>
+                            <p class="text-gray-600">Yes, you can cancel your subscription anytime with no cancellation fees.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page hidden">
+        <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <div class="mx-auto h-12 w-12 flex items-center justify-center">
+                        <span class="text-3xl">📅</span>
+                    </div>
+                    <h2 class="login-title mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+                    <p class="login-subtitle mt-2 text-center text-sm text-gray-600">
+                        Or <a href="#" onclick="showPage('signup')" class="font-medium text-purple-600 hover:text-purple-500">create a new account</a>
+                    </p>
+                </div>
+                <form class="mt-8 space-y-6" onsubmit="handleLogin(event)">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email-address" class="sr-only">Email address</label>
+                            <input id="email-address" name="email" type="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm" placeholder="Email address">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Password</label>
+                            <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm" placeholder="Password">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-900">Remember me</label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-purple-600 hover:text-purple-500">Forgot your password?</a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Sign in
+                        </button>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-2 gap-3">
+                            <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fab fa-google text-red-500"></i>
+                                <span class="ml-2">Google</span>
+                            </button>
+
+                            <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fab fa-facebook text-blue-600"></i>
+                                <span class="ml-2">Facebook</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Page -->
+    <div id="signup-page" class="page hidden">
+        <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <div class="mx-auto h-12 w-12 flex items-center justify-center">
+                        <span class="text-3xl">📅</span>
+                    </div>
+                    <h2 class="signup-title mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+                    <p class="signup-subtitle mt-2 text-center text-sm text-gray-600">
+                        Already have an account? <a href="#" onclick="showPage('login')" class="font-medium text-purple-600 hover:text-purple-500">Sign in</a>
+                    </p>
+                </div>
+                <form class="mt-8 space-y-6" onsubmit="handleSignup(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="full-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input id="full-name" name="fullName" type="text" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label for="signup-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input id="signup-email" name="email" type="email" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="john@example.com">
+                        </div>
+                        <div>
+                            <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input id="signup-password" name="password" type="password" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Password">
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input id="confirm-password" name="confirmPassword" type="password" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Confirm Password">
+                        </div>
+                        <div>
+                            <label for="plan" class="block text-sm font-medium text-gray-700">Select Plan</label>
+                            <select id="plan" name="plan" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+                                <option value="">-- Select a plan --</option>
+                                <option value="Free">Free (3 dates per category)</option>
+                                <option value="Basic">Basic ($10/month - 10 dates per category)</option>
+                                <option value="Pro">Pro ($20/month - 30 dates per category)</option>
+                                <option value="Enterprise">Enterprise ($50/month - Unlimited)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="agree-terms" name="agreeTerms" type="checkbox" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                        <label for="agree-terms" class="ml-2 block text-sm text-gray-900">
+                            I agree to the <a href="#" class="text-purple-600 hover:text-purple-500">Terms of Service</a> and <a href="#" class="text-purple-600 hover:text-purple-500">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Create Account
+                        </button>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-2 bg-gray-50 text-gray-500">Or sign up with</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-2 gap-3">
+                            <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fab fa-google text-red-500"></i>
+                                <span class="ml-2">Google</span>
+                            </button>
+
+                            <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fab fa-facebook text-blue-600"></i>
+                                <span class="ml-2">Facebook</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="page hidden">
+        <div class="min-h-screen bg-gray-50">
+            <!-- Dashboard Header -->
+            <div class="bg-white shadow">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center py-6">
+                        <div>
+                            <h1 class="dashboard-title text-2xl font-bold text-gray-900">My Dashboard</h1>
+                            <p class="dashboard-subtitle text-gray-600">Welcome back! Here are your upcoming dates.</p>
+                            <p id="user-plan" class="text-sm text-purple-600 mt-1"></p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="showAddEventModal()" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-plus mr-2"></i>Add Event
+                            </button>
+                            <button onclick="showPage('settings')" class="text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-cog text-xl"></i>
+                            </button>
+                            <button onclick="logout()" class="text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-sign-out-alt text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Plan Usage -->
+                <div class="mb-6 bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-medium mb-2">Your Plan Usage</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="border p-3 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-500 mb-1">Birthdays</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div id="birthday-usage" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="birthday-count" class="text-xs text-gray-500 mt-1">0/3 used</p>
+                        </div>
+                        <div class="border p-3 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-500 mb-1">Appointments</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div id="appointment-usage" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="appointment-count" class="text-xs text-gray-500 mt-1">0/3 used</p>
+                        </div>
+                        <div class="border p-3 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-500 mb-1">Subscriptions</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div id="subscription-usage" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="subscription-count" class="text-xs text-gray-500 mt-1">0/3 used</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-right">
+                        <a href="#" onclick="showPage('pricing')" class="text-sm text-purple-600 hover:text-purple-500">Upgrade plan for more dates</a>
+                    </div>
+                </div>
+
+                <!-- View Toggle -->
+                <div class="mb-6">
+                    <div class="flex space-x-1 bg-gray-200 p-1 rounded-lg w-fit">
+                        <button onclick="switchView('calendar')" id="calendar-view-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-white text-purple-600 shadow-sm">
+                            <i class="fas fa-calendar-alt mr-2"></i>Calendar
+                        </button>
+                        <button onclick="switchView('list')" id="list-view-btn" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-list mr-2"></i>List
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendar-view" class="view-content">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-gray-900">December 2024</h2>
+                            <div class="flex space-x-2">
+                                <button class="p-2 hover:bg-gray-100 rounded">
+                                    <i class="fas fa-chevron-left text-gray-600"></i>
+                                </button>
+                                <button class="p-2 hover:bg-gray-100 rounded">
+                                    <i class="fas fa-chevron-right text-gray-600"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="calendar-grid bg-gray-50 rounded-lg p-4">
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Sun</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Mon</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Tue</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Wed</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Thu</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Fri</div>
+                            <div class="calendar-day font-semibold text-gray-600 bg-gray-100">Sat</div>
+                            
+                            <div class="calendar-day text-gray-400">1</div>
+                            <div class="calendar-day text-gray-400">2</div>
+                            <div class="calendar-day text-gray-400">3</div>
+                            <div class="calendar-day text-gray-400">4</div>
+                            <div class="calendar-day text-gray-400">5</div>
+                            <div class="calendar-day text-gray-400">6</div>
+                            <div class="calendar-day text-gray-400">7</div>
+                            <div class="calendar-day">8</div>
+                            <div class="calendar-day">9</div>
+                            <div class="calendar-day">10</div>
+                            <div class="calendar-day">11</div>
+                            <div class="calendar-day">12</div>
+                            <div class="calendar-day">13</div>
+                            <div class="calendar-day">14</div>
+                            <div class="calendar-day has-event">15</div>
+                            <div class="calendar-day">16</div>
+                            <div class="calendar-day">17</div>
+                            <div class="calendar-day">18</div>
+                            <div class="calendar-day">19</div>
+                            <div class="calendar-day">20</div>
+                            <div class="calendar-day">21</div>
+                            <div class="calendar-day has-event">22</div>
+                            <div class="calendar-day">23</div>
+                            <div class="calendar-day">24</div>
+                            <div class="calendar-day has-event">25</div>
+                            <div class="calendar-day">26</div>
+                            <div class="calendar-day">27</div>
+                            <div class="calendar-day">28</div>
+                            <div class="calendar-day">29</div>
+                            <div class="calendar-day">30</div>
+                            <div class="calendar-day">31</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div id="list-view" class="view-content hidden">
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-4">
+                                        <i class="fas fa-birthday-cake text-pink-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Mom's Birthday</h3>
+                                        <p class="text-gray-600">December 15, 2024</p>
+                                        <p class="text-sm text-gray-500">Reminder: 3 days before</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-600">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                        <i class="fas fa-heart text-red-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Wedding Anniversary</h3>
+                                        <p class="text-gray-600">December 22, 2024</p>
+                                        <p class="text-sm text-gray-500">Reminder: 1 week before</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-600">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                        <i class="fas fa-gift text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Christmas</h3>
+                                        <p class="text-gray-600">December 25, 2024</p>
+                                        <p class="text-sm text-gray-500">Reminder: 2 weeks before</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-600">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div id="settings-page" class="page hidden">
+        <div class="min-h-screen bg-gray-50">
+            <div class="bg-white shadow">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center py-6">
+                        <div>
+                            <h1 class="settings-title text-2xl font-bold text-gray-900">Settings</h1>
+                            <p class="settings-subtitle text-gray-600">Manage your account and preferences</p>
+                        </div>
+                        <button onclick="showPage('dashboard')" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="space-y-6">
+                    <!-- Profile Settings -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Profile Information</h3>
+                        </div>
+                        <div class="px-6 py-4">
+                            <form class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                                        <input type="text" value="John Doe" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                                        <input type="email" value="john@example.com" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Time Zone</label>
+                                    <select class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                        <option>UTC-5 (Eastern Time)</option>
+                                        <option>UTC-6 (Central Time)</option>
+                                        <option>UTC-7 (Mountain Time)</option>
+                                        <option>UTC-8 (Pacific Time)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Password Settings -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Change Password</h3>
+                        </div>
+                        <div class="px-6 py-4">
+                            <form class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Current Password</label>
+                                    <input type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">New Password</label>
+                                    <input type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                                    <input type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                                <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    Update Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Reminder Preferences</h3>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-900">Email Reminders</h4>
+                                        <p class="text-sm text-gray-500">Receive email notifications for upcoming events</p>
+                                    </div>
+                                    <input type="checkbox" checked class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-900">Weekly Summary</h4>
+                                        <p class="text-sm text-gray-500">Get a weekly summary of upcoming events</p>
+                                    </div>
+                                    <input type="checkbox" checked class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Default Reminder Time</label>
+                                    <select class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                                        <option>1 day before</option>
+                                        <option>3 days before</option>
+                                        <option>1 week before</option>
+                                        <option>2 weeks before</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    Save Preferences
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plan Settings -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Your Plan</h3>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900" id="current-plan">Free Plan</h4>
+                                    <p class="text-sm text-gray-500" id="plan-details">3 dates per category</p>
+                                </div>
+                                <button onclick="showPage('pricing')" class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    Upgrade Plan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-red-600">Danger Zone</h3>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-900">Delete Account</h4>
+                                    <p class="text-sm text-gray-500">Permanently delete your account and all data</p>
+                                </div>
+                                <button onclick="confirmDeleteAccount()" class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">
+                                    Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Page -->
+    <div id="about-page" class="page hidden">
+        <div class="bg-white">
+            <!-- Hero Section -->
+            <div class="gradient-bg text-white py-20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h1 class="about-title text-4xl md:text-5xl font-bold mb-6">About DateKeeper</h1>
+                    <p class="about-subtitle text-xl opacity-90">Helping people stay connected to what matters most</p>
+                </div>
+            </div>
+
+            <!-- Mission Section -->
+            <div class="py-20">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-16">
+                        <h2 class="mission-title text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
+                        <p class="mission-text text-lg text-gray-600 leading-relaxed">
+                            We believe that remembering important dates shouldn't be stressful. DateKeeper was created to help busy people maintain meaningful relationships and never miss the moments that matter most. Whether it's a birthday, anniversary, or important appointment, we're here to ensure you're always prepared.
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-8 mb-16">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-heart text-2xl text-purple-600"></i>
+                            </div>
+                            <h3 class="value-title text-lg font-semibold mb-2">Relationships First</h3>
+                            <p class="value-description text-gray-600">We help you nurture the relationships that matter most by ensuring you never forget important moments.</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-shield-alt text-2xl text-purple-600"></i>
+                            </div>
+                            <h3 class="value-title text-lg font-semibold mb-2">Privacy Focused</h3>
+                            <p class="value-description text-gray-600">Your personal information is encrypted and never shared. We respect your privacy completely.</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-magic text-2xl text-purple-600"></i>
+                            </div>
+                            <h3 class="value-title text-lg font-semibold mb-2">Simple & Elegant</h3>
+                            <p class="value-description text-gray-600">Beautiful design meets powerful functionality. Managing dates should be effortless and enjoyable.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-xl p-8">
+                        <h3 class="privacy-title text-2xl font-bold text-gray-900 mb-4">Our Privacy Commitment</h3>
+                        <div class="space-y-4 text-gray-600">
+                            <p>🔒 <strong>End-to-end encryption:</strong> Your data is encrypted both in transit and at rest</p>
+                            <p>🚫 <strong>No data selling:</strong> We never sell, rent, or share your personal information</p>
+                            <p>🌍 <strong>GDPR compliant:</strong> Full compliance with international privacy regulations</p>
+                            <p>🗑️ <strong>Data deletion:</strong> You can delete your account and all data at any time</p>
+                            <p>📧 <strong>Minimal emails:</strong> We only send the reminders you request, nothing more</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Page -->
+    <div id="contact-page" class="page hidden">
+        <div class="bg-white py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h1 class="contact-title text-4xl font-bold text-gray-900 mb-4">Get in Touch</h1>
+                    <p class="contact-subtitle text-xl text-gray-600">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-12">
+                    <!-- Contact Form -->
+                    <div>
+                        <form class="space-y-6" onsubmit="handleContactForm(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                                    <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                                    <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                                    <option>General Inquiry</option>
+                                    <option>Technical Support</option>
+                                    <option>Feature Request</option>
+                                    <option>Bug Report</option>
+                                    <option>Account Issue</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                                <textarea rows="6" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500" placeholder="Tell us how we can help..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="w-full btn-primary text-white py-3 px-6 rounded-md font-medium">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Contact Info & FAQ -->
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">Other Ways to Reach Us</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope text-purple-600 w-6"></i>
+                                    <span class="ml-3 text-gray-600">support@datekeeper.com</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock text-purple-600 w-6"></i>
+                                    <span class="ml-3 text-gray-600">Response time: Within 24 hours</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-globe text-purple-600 w-6"></i>
+                                    <span class="ml-3 text-gray-600">Available in English, French, and Arabic</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">Frequently Asked Questions</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-purple-600 pl-4">
+                                    <h4 class="font-medium text-gray-900">How do I change my reminder settings?</h4>
+                                    <p class="text-gray-600 text-sm mt-1">Go to Settings > Reminder Preferences to customize when and how you receive notifications.</p>
+                                </div>
+                                
+                                <div class="border-l-4 border-purple-600 pl-4">
+                                    <h4 class="font-medium text-gray-900">Can I import dates from other calendars?</h4>
+                                    <p class="text-gray-600 text-sm mt-1">Yes! You can import events from Google Calendar, Outlook, and other popular calendar applications.</p>
+                                </div>
+                                
+                                <div class="border-l-4 border-purple-600 pl-4">
+                                    <h4 class="font-medium text-gray-900">Is my data secure?</h4>
+                                    <p class="text-gray-600 text-sm mt-1">Absolutely. We use end-to-end encryption and never share your personal information with third parties.</p>
+                                </div>
+                                
+                                <div class="border-l-4 border-purple-600 pl-4">
+                                    <h4 class="font-medium text-gray-900">How do I delete my account?</h4>
+                                    <p class="text-gray-600 text-sm mt-1">You can delete your account anytime from Settings > Danger Zone. All your data will be permanently removed.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="add-event-modal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Add New Event</h2>
+                <button onclick="closeAddEventModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleAddEvent(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Event Name</label>
+                    <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500" placeholder="e.g., Mom's Birthday">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                        <option value="birthday">🎂 Birthday</option>
+                        <option value="anniversary">💕 Anniversary</option>
+                        <option value="appointment">📅 Appointment</option>
+                        <option value="subscription">🔄 Subscription</option>
+                        <option value="other">📝 Other</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                    <input type="date" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reminder Settings</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <span class="ml-2 text-sm text-gray-700">1 day before</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <span class="ml-2 text-sm text-gray-700">3 days before</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <span class="ml-2 text-sm text-gray-700">1 week before</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" class="flex-1 btn-primary text-white py-2 px-4 rounded-md font-medium">
+                        Add Event
+                    </button>
+                    <button type="button" onclick="closeAddEventModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md font-medium hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                // Navigation
+                'Home': 'Home',
+                'Pricing': 'Pricing',
+                'About': 'About',
+                'Contact': 'Contact',
+                'Login': 'Login',
+                'Sign Up': 'Sign Up',
+                
+                // Homepage
+                'hero-title': 'Never Miss Important Dates Again',
+                'hero-subtitle': 'Smart reminders for birthdays, anniversaries, appointments, and all your special moments',
+                'cta-button': 'Get Started Free',
+                'how-it-works-title': 'How It Works',
+                'how-it-works-subtitle': 'Three simple steps to never forget again',
+                'step-title': ['1. Add Your Dates', '2. Set Reminders', '3. Get Notified'],
+                'step-description': [
+                    'Simply add birthdays, anniversaries, appointments, and any important dates to your personal calendar.',
+                    'Choose when and how you want to be reminded - days, weeks, or months in advance.',
+                    'Receive timely email reminders so you can prepare and never miss another important moment.'
+                ],
+                'benefits-title': 'Why Choose DateKeeper?',
+                'benefit-title': ['Secure & Private', 'Mobile Friendly', 'Smart Reminders', 'Free Forever'],
+                'benefit-description': [
+                    'Your data is encrypted and never shared with third parties.',
+                    'Access your dates anywhere, anytime on any device.',
+                    'Customizable reminder timing for different types of events.',
+                    'Core features are completely free with no hidden costs.'
+                ],
+                'testimonials-title': 'What Our Users Say',
+                'testimonial-text': [
+                    '"DateKeeper saved my relationships! I never forget birthdays or anniversaries anymore. The reminders are perfectly timed."',
+                    '"As a busy entrepreneur, this app is a lifesaver. I can focus on work knowing I\'ll never miss important personal dates."',
+                    '"Simple, clean, and effective. The interface is so intuitive that I set up all my family dates in minutes."'
+                ],
+                
+                // Login/Signup
+                'login-title': 'Sign in to your account',
+                'login-subtitle': 'Or create a new account',
+                'signup-title': 'Create your account',
+                'signup-subtitle': 'Already have an account? Sign in',
+                
+                // Dashboard
+                'dashboard-title': 'My Dashboard',
+                'dashboard-subtitle': 'Welcome back! Here are your upcoming dates.',
+                
+                // Settings
+                'settings-title': 'Settings',
+                'settings-subtitle': 'Manage your account and preferences',
+                
+                // About
+                'about-title': 'About DateKeeper',
+                'about-subtitle': 'Helping people stay connected to what matters most',
+                'mission-title': 'Our Mission',
+                'mission-text': 'We believe that remembering important dates shouldn\'t be stressful. DateKeeper was created to help busy people maintain meaningful relationships and never miss the moments that matter most. Whether it\'s a birthday, anniversary, or important appointment, we\'re here to ensure you\'re always prepared.',
+                'value-title': ['Relationships First', 'Privacy Focused', 'Simple & Elegant'],
+                'value-description': [
+                    'We help you nurture the relationships that matter most by ensuring you never forget important moments.',
+                    'Your personal information is encrypted and never shared. We respect your privacy completely.',
+                    'Beautiful design meets powerful functionality. Managing dates should be effortless and enjoyable.'
+                ],
+                'privacy-title': 'Our Privacy Commitment',
+                
+                // Contact
+                'contact-title': 'Get in Touch',
+                'contact-subtitle': 'We\'d love to hear from you. Send us a message and we\'ll respond as soon as possible.'
+            },
+            
+            fr: {
+                // Navigation
+                'Home': 'Accueil',
+                'Pricing': 'Tarifs',
+                'About': 'À propos',
+                'Contact': 'Contact',
+                'Login': 'Connexion',
+                'Sign Up': 'S\'inscrire',
+                
+                // Homepage
+                'hero-title': 'Ne Manquez Plus Jamais de Dates Importantes',
+                'hero-subtitle': 'Rappels intelligents pour anniversaires, rendez-vous et tous vos moments spéciaux',
+                'cta-button': 'Commencer Gratuitement',
+                'how-it-works-title': 'Comment Ça Marche',
+                'how-it-works-subtitle': 'Trois étapes simples pour ne plus jamais oublier',
+                'step-title': ['1. Ajoutez Vos Dates', '2. Définissez des Rappels', '3. Soyez Notifié'],
+                'step-description': [
+                    'Ajoutez simplement anniversaires, rendez-vous et toutes dates importantes à votre calendrier personnel.',
+                    'Choisissez quand et comment vous voulez être rappelé - jours, semaines ou mois à l\'avance.',
+                    'Recevez des rappels par email opportuns pour vous préparer et ne manquer aucun moment important.'
+                ],
+                'benefits-title': 'Pourquoi Choisir DateKeeper?',
+                'benefit-title': ['Sécurisé et Privé', 'Compatible Mobile', 'Rappels Intelligents', 'Gratuit à Vie'],
+                'benefit-description': [
+                    'Vos données sont cryptées et jamais partagées avec des tiers.',
+                    'Accédez à vos dates partout, à tout moment sur n\'importe quel appareil.',
+                    'Timing de rappel personnalisable pour différents types d\'événements.',
+                    'Les fonctionnalités principales sont complètement gratuites sans coûts cachés.'
+                ],
+                'testimonials-title': 'Ce Que Disent Nos Utilisateurs',
+                
+                // Login/Signup
+                'login-title': 'Connectez-vous à votre compte',
+                'login-subtitle': 'Ou créez un nouveau compte',
+                'signup-title': 'Créez votre compte',
+                'signup-subtitle': 'Vous avez déjà un compte? Connectez-vous',
+                
+                // Dashboard
+                'dashboard-title': 'Mon Tableau de Bord',
+                'dashboard-subtitle': 'Bon retour! Voici vos dates à venir.',
+                
+                // Settings
+                'settings-title': 'Paramètres',
+                'settings-subtitle': 'Gérez votre compte et préférences',
+                
+                // About
+                'about-title': 'À Propos de DateKeeper',
+                'about-subtitle': 'Aider les gens à rester connectés à ce qui compte le plus',
+                'mission-title': 'Notre Mission',
+                'mission-text': 'Nous croyons que se souvenir des dates importantes ne devrait pas être stressant. DateKeeper a été créé pour aider les personnes occupées à maintenir des relations significatives et ne jamais manquer les moments qui comptent le plus.',
+                'value-title': ['Relations d\'Abord', 'Axé sur la Confidentialité', 'Simple et Élégant'],
+                'privacy-title': 'Notre Engagement de Confidentialité',
+                
+                // Contact
+                'contact-title': 'Contactez-Nous',
+                'contact-subtitle': 'Nous aimerions avoir de vos nouvelles. Envoyez-nous un message et nous répondrons dès que possible.'
+            },
+            
+            ar: {
+                // Navigation
+                'Home': 'الرئيسية',
+                'Pricing': 'الأسعار',
+                'About': 'حول',
+                'Contact': 'اتصل',
+                'Login': 'تسجيل الدخول',
+                'Sign Up': 'إنشاء حساب',
+                
+                // Homepage
+                'hero-title': 'لا تفوت التواريخ المهمة مرة أخرى',
+                'hero-subtitle': 'تذكيرات ذكية لأعياد الميلاد والذكريات والمواعيد وجميع لحظاتك الخاصة',
+                'cta-button': 'ابدأ مجاناً',
+                'how-it-works-title': 'كيف يعمل',
+                'how-it-works-subtitle': 'ثلاث خطوات بسيطة لعدم النسيان مرة أخرى',
+                'step-title': ['1. أضف تواريخك', '2. اضبط التذكيرات', '3. احصل على الإشعارات'],
+                'step-description': [
+                    'ببساطة أضف أعياد الميلاد والذكريات والمواعيد وأي تواريخ مهمة إلى تقويمك الشخصي.',
+                    'اختر متى وكيف تريد أن يتم تذكيرك - أيام أو أسابيع أو أشهر مقدماً.',
+                    'احصل على تذكيرات بالبريد الإلكتروني في الوقت المناسب حتى تتمكن من التحضير وعدم تفويت أي لحظة مهمة.'
+                ],
+                'benefits-title': 'لماذا تختار DateKeeper؟',
+                'benefit-title': ['آمن وخاص', 'متوافق مع الجوال', 'تذكيرات ذكية', 'مجاني إلى الأبد'],
+                'benefit-description': [
+                    'بياناتك مشفرة ولا تُشارك مع أطراف ثالثة.',
+                    'الوصول إلى تواريخك في أي مكان وفي أي وقت على أي جهاز.',
+                    'توقيت تذكير قابل للتخصيص لأنواع مختلفة من الأحداث.',
+                    'الميزات الأساسية مجانية تماماً بدون تكاليف خفية.'
+                ],
+                'testimonials-title': 'ماذا يقول مستخدمونا',
+                
+                // Login/Signup
+                'login-title': 'سجل الدخول إلى حسابك',
+                'login-subtitle': 'أو أنشئ حساباً جديداً',
+                'signup-title': 'أنشئ حسابك',
+                'signup-subtitle': 'هل لديك حساب بالفعل؟ سجل الدخول',
+                
+                // Dashboard
+                'dashboard-title': 'لوحة التحكم',
+                'dashboard-subtitle': 'مرحباً بعودتك! إليك تواريخك القادمة.',
+                
+                // Settings
+                'settings-title': 'الإعدادات',
+                'settings-subtitle': 'إدارة حسابك وتفضيلاتك',
+                
+                // About
+                'about-title': 'حول DateKeeper',
+                'about-subtitle': 'مساعدة الناس على البقاء متصلين بما يهم أكثر',
+                'mission-title': 'مهمتنا',
+                'mission-text': 'نؤمن أن تذكر التواريخ المهمة لا يجب أن يكون مرهقاً. تم إنشاء DateKeeper لمساعدة الأشخاص المشغولين على الحفاظ على علاقات ذات معنى وعدم تفويت اللحظات التي تهم أكثر.',
+                'value-title': ['العلاقات أولاً', 'التركيز على الخصوصية', 'بسيط وأنيق'],
+                'privacy-title': 'التزامنا بالخصوصية',
+                
+                // Contact
+                'contact-title': 'تواصل معنا',
+                'contact-subtitle': 'نود أن نسمع منك. أرسل لنا رسالة وسنرد في أقرب وقت ممكن.'
+            }
+        };
+
+        let currentLanguage = 'en';
+        let currentPage = 'home';
+        let currentUser = null;
+        let yearlyBilling = false;
+
+        // Page navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId + '-page').classList.remove('hidden');
+            currentPage = pageId;
+            
+            // Update navigation
+            updateNavigation();
+            
+            // Close mobile menu if open
+            document.getElementById('mobile-menu').classList.add('hidden');
+            
+            // Update dashboard if needed
+            if (pageId === 'dashboard' && currentUser) {
+                updateDashboard();
+            }
+        }
+
+        function updateNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('text-purple-600', 'font-semibold');
+                link.classList.add('text-gray-700');
+            });
+            
+            // Highlight current page
+            const currentLink = document.querySelector(`[onclick="showPage('${currentPage}')"]`);
+            if (currentLink && currentLink.classList.contains('nav-link')) {
+                currentLink.classList.remove('text-gray-700');
+                currentLink.classList.add('text-purple-600', 'font-semibold');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Language switching
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            updateLanguage();
+            
+            // Update direction for Arabic
+            if (lang === 'ar') {
+                document.documentElement.setAttribute('dir', 'rtl');
+                document.body.classList.add('rtl');
+            } else {
+                document.documentElement.setAttribute('dir', 'ltr');
+                document.body.classList.remove('rtl');
+            }
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLanguage];
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach((link, index) => {
+                const keys = ['Home', 'Pricing', 'About', 'Contact', 'Login'];
+                if (keys[index] && t[keys[index]]) {
+                    link.textContent = t[keys[index]];
+                }
+            });
+            
+            // Update homepage content
+            const heroTitle = document.querySelector('.hero-title');
+            if (heroTitle && t['hero-title']) heroTitle.textContent = t['hero-title'];
+            
+            const heroSubtitle = document.querySelector('.hero-subtitle');
+            if (heroSubtitle && t['hero-subtitle']) heroSubtitle.textContent = t['hero-subtitle'];
+            
+            const ctaButton = document.querySelector('.cta-button');
+            if (ctaButton && t['cta-button']) ctaButton.textContent = t['cta-button'];
+            
+            // Update other elements similarly...
+        }
+
+        // Plan selection
+        function selectPlan(plan) {
+            // Store selected plan
+            localStorage.setItem('selectedPlan', plan);
+            
+            // Redirect to signup
+            showPage('signup');
+            
+            // Update plan selection in form
+            document.getElementById('plan').value = plan;
+            
+            // Demo message
+            alert(`You've selected the ${plan} plan. Complete your registration to continue.`);
+        }
+
+        // Billing toggle
+        function toggleBilling(period) {
+            yearlyBilling = period === 'yearly';
+            
+            // Update UI
+            document.getElementById('monthly-toggle').classList.toggle('bg-white', !yearlyBilling);
+            document.getElementById('monthly-toggle').classList.toggle('text-purple-600', !yearlyBilling);
+            document.getElementById('monthly-toggle').classList.toggle('shadow-sm', !yearlyBilling);
+            document.getElementById('monthly-toggle').classList.toggle('text-gray-600', yearlyBilling);
+            
+            document.getElementById('yearly-toggle').classList.toggle('bg-white', yearlyBilling);
+            document.getElementById('yearly-toggle').classList.toggle('text-purple-600', yearlyBilling);
+            document.getElementById('yearly-toggle').classList.toggle('shadow-sm', yearlyBilling);
+            document.getElementById('yearly-toggle').classList.toggle('text-gray-600', !yearlyBilling);
+            
+            // Update prices
+            updatePrices();
+        }
+
+        function updatePrices() {
+            if (yearlyBilling) {
+                document.getElementById('basic-price').textContent = '$8';
+                document.getElementById('basic-yearly').textContent = '$96 billed annually';
+                document.getElementById('pro-price').textContent = '$16';
+                document.getElementById('pro-yearly').textContent = '$192 billed annually';
+                document.getElementById('enterprise-price').textContent = '$40';
+                document.getElementById('enterprise-yearly').textContent = '$480 billed annually';
+            } else {
+                document.getElementById('basic-price').textContent = '$10';
+                document.getElementById('basic-yearly').textContent = '$100 billed annually';
+                document.getElementById('pro-price').textContent = '$20';
+                document.getElementById('pro-yearly').textContent = '$200 billed annually';
+                document.getElementById('enterprise-price').textContent = '$50';
+                document.getElementById('enterprise-yearly').textContent = '$500 billed annually';
+            }
+        }
+
+        // Authentication
+        function handleLogin(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            // Demo login - in real app, this would make an API call
+            if (email && password) {
+                currentUser = { 
+                    email: email, 
+                    name: 'John Doe',
+                    plan: localStorage.getItem('selectedPlan') || 'Free'
+                };
+                showPage('dashboard');
+                alert('Login successful! (Demo)');
+            }
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            const plan = formData.get('plan');
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (!plan) {
+                alert('Please select a plan');
+                return;
+            }
+            
+            // Demo signup - in real app, this would make an API call
+            currentUser = { 
+                email: formData.get('email'), 
+                name: formData.get('fullName'),
+                plan: plan
+            };
+            
+            // Store selected plan
+            localStorage.setItem('selectedPlan', plan);
+            
+            showPage('dashboard');
+            alert(`Account created successfully! You're on the ${plan} plan. (Demo)`);
+        }
+
+        function logout() {
+            currentUser = null;
+            showPage('home');
+            alert('Logged out successfully!');
+        }
+
+        // Dashboard functionality
+        function updateDashboard() {
+            // Update user info
+            document.getElementById('user-plan').textContent = `${currentUser.plan} Plan`;
+            
+            // Update plan usage based on selected plan
+            let maxEvents = 3;
+            if (currentUser.plan === 'Basic') maxEvents = 10;
+            else if (currentUser.plan === 'Pro') maxEvents = 30;
+            else if (currentUser.plan === 'Enterprise') maxEvents = 999; // Unlimited
+            
+            // Demo data - in real app, this would come from database
+            const birthdayCount = currentUser.plan === 'Free' ? 2 : 5;
+            const appointmentCount = currentUser.plan === 'Free' ? 1 : 4;
+            const subscriptionCount = currentUser.plan === 'Free' ? 0 : 2;
+            
+            // Update usage bars
+            document.getElementById('birthday-usage').style.width = `${Math.min(100, (birthdayCount/maxEvents)*100)}%`;
+            document.getElementById('appointment-usage').style.width = `${Math.min(100, (appointmentCount/maxEvents)*100)}%`;
+            document.getElementById('subscription-usage').style.width = `${Math.min(100, (subscriptionCount/maxEvents)*100)}%`;
+            
+            // Update counts
+            document.getElementById('birthday-count').textContent = `${birthdayCount}/${maxEvents} used`;
+            document.getElementById('appointment-count').textContent = `${appointmentCount}/${maxEvents} used`;
+            document.getElementById('subscription-count').textContent = `${subscriptionCount}/${maxEvents} used`;
+            
+            // Update settings page
+            document.getElementById('current-plan').textContent = `${currentUser.plan} Plan`;
+            let planDetails = '';
+            if (currentUser.plan === 'Free') planDetails = '3 dates per category';
+            else if (currentUser.plan === 'Basic') planDetails = '10 dates per category';
+            else if (currentUser.plan === 'Pro') planDetails = '30 dates per category';
+            else if (currentUser.plan === 'Enterprise') planDetails = 'Unlimited dates';
+            document.getElementById('plan-details').textContent = planDetails;
+        }
+
+        function switchView(viewType) {
+            // Update buttons
+            document.getElementById('calendar-view-btn').classList.remove('bg-white', 'text-purple-600', 'shadow-sm');
+            document.getElementById('calendar-view-btn').classList.add('text-gray-600');
+            document.getElementById('list-view-btn').classList.remove('bg-white', 'text-purple-600', 'shadow-sm');
+            document.getElementById('list-view-btn').classList.add('text-gray-600');
+            
+            // Update selected button
+            const selectedBtn = document.getElementById(viewType + '-view-btn');
+            selectedBtn.classList.remove('text-gray-600');
+            selectedBtn.classList.add('bg-white', 'text-purple-600', 'shadow-sm');
+            
+            // Show/hide views
+            document.getElementById('calendar-view').classList.toggle('hidden', viewType !== 'calendar');
+            document.getElementById('list-view').classList.toggle('hidden', viewType !== 'list');
+        }
+
+        function showAddEventModal() {
+            document.getElementById('add-event-modal').classList.add('show');
+        }
+
+        function closeAddEventModal() {
+            document.getElementById('add-event-modal').classList.remove('show');
+        }
+
+        function handleAddEvent(event) {
+            event.preventDefault();
+            
+            // Check if user can add more events based on their plan
+            if (currentUser.plan === 'Free') {
+                // In a real app, we would check the actual count from the database
+                alert('You have reached the limit for your Free plan. Upgrade to add more dates.');
+                showPage('pricing');
+                return;
+            }
+            
+            // Demo - in real app, this would save to database
+            alert('Event added successfully! (Demo)');
+            closeAddEventModal();
+        }
+
+        // Settings
+        function confirmDeleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                alert('Account deletion requested. (Demo - account would be deleted)');
+                logout();
+            }
+        }
+
+        // Contact form
+        function handleContactForm(event) {
+            event.preventDefault();
+            alert('Thank you for your message! We\'ll get back to you soon. (Demo)');
+            event.target.reset();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('home');
+            updateLanguage();
+            
+            // Initialize billing toggle
+            document.getElementById('monthly-toggle').addEventListener('click', () => toggleBilling('monthly'));
+            document.getElementById('yearly-toggle').addEventListener('click', () => toggleBilling('yearly'));
+            
+            // Close modal when clicking outside
+            document.getElementById('add-event-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAddEventModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
